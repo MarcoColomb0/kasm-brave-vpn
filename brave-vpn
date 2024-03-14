@@ -17,7 +17,7 @@ RUN bash $INST_SCRIPTS/brave/install_brave.sh  && rm -rf $INST_SCRIPTS/brave/
 
 # Install VPN clients
 COPY ./src/ubuntu/install/vpn/ $INST_SCRIPTS/vpn/
-RUN bash $INST_SCRIPTS/vpn/install_vpn.sh
+RUN bash $INST_SCRIPTS/vpn/install_vpn.sh  && rm -rf $INST_SCRIPTS/vpn/
 
 # Update the desktop environment to be optimized for a single application
 RUN cp $HOME/.config/xfce4/xfconf/single-application-xfce-perchannel-xml/* $HOME/.config/xfce4/xfconf/xfce-perchannel-xml/
