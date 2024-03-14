@@ -34,15 +34,11 @@ jobs:
             TAG=latest
           fi
           echo "::set-output name=tag::$TAG"
-      - name: Build image
-        run: docker build -t ${{ env.IMAGE_NAME }}:${{ steps.determine_tag.outputs.tag }} -f brave-vpn .
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-      - name: Push image
+      - name: Build and Push image
         run: |
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           [ "$VERSION" == "main" ] && VERSION=latest
-          docker tag ${{ env.IMAGE_NAME }} $IMAGE_ID:${{ steps.determine_tag.outputs.tag }}
+          docker build -t $IMAGE_ID:${{ steps.determine_tag.outputs.tag }} -f brave-vpn .
           docker push $IMAGE_ID:${{ steps.determine_tag.outputs.tag }}
