@@ -17,28 +17,37 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # Step to determine the commit message
       - name: Determine commit message
         id: commit_message
         run: |
           COMMIT_MESSAGE=$(git log --format=%B -n 1)
           echo "::set-output name=commit_message::$COMMIT_MESSAGE"
+
+      # Step to determine the image tag based on the commit message
       - name: Determine image tag
         id: determine_tag
         run: |
           COMMIT_MESSAGE="${{ steps.commit_message.outputs.commit_message }}"
-          if echo "$COMMIT_MESSAGE" | grep -q -E '[0-9]+\.[0-9]+'; then
-            echo "Setting image tag to commit hash"
-            TAG=$(echo "${{ github.sha }}" | cut -c1-8)
+          # Look for a version number like "1.1" in the commit message
+          if echo "$COMMIT_MESSAGE" | grep -q -E '\b[0-9]+\.[0-9]+\b'; then
+            # If a version number is found in the commit message, use it as the tag
+            TAG=$(echo "$COMMIT_MESSAGE" | grep -Eo '\b[0-9]+\.[0-9]+\b' | head -1)
           else
-            echo "Setting image tag to 'latest'"
+            # Otherwise, set the tag to 'latest'
             TAG=latest
           fi
           echo "::set-output name=tag::$TAG"
+
+      # Step to build and push the Docker image
       - name: Build and Push image
         run: |
           IMAGE_ID=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           [ "$VERSION" == "main" ] && VERSION=latest
+          # Build the Docker image with the tag determined from the commit message
           docker build -t $IMAGE_ID:${{ steps.determine_tag.outputs.tag }} -f brave-vpn .
+          # Push the Docker image to the registry
           docker push $IMAGE_ID:${{ steps.determine_tag.outputs.tag }}
