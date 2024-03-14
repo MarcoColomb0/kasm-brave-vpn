@@ -1,4 +1,4 @@
-name: Build Docker Image and push to registry
+name: Builder
 
 on:
   push:
@@ -11,12 +11,27 @@ env:
   IMAGE_NAME: kasm-brave-vpn
 
 jobs:
-  push:
+  checkout-code:
+    name: Checkout code
+    uses: actions/checkout@4
+
+  update-ver:
+    name: Update version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: reecetech/version-increment@2023.10.2
+        id: version
+        with:
+          scheme: semver
+          increment: patch
+
+  build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: docker build -t kasm-brave-vpn:latest -f brave-vpn .
+        run: docker build -t kasm-brave-vpn:${{ steps.version.outputs.version }} -f brave-vpn .
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
       - name: Push image
